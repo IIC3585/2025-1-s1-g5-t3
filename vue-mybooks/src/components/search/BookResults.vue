@@ -22,7 +22,7 @@ const props = defineProps({
 .results-container {
   width: 800px;
   max-width: 90vw;
-  height: 200px;
+  height: 150px;
   overflow-y: auto;
   border: 2px solid #ccc;
   border-radius: 12px;
