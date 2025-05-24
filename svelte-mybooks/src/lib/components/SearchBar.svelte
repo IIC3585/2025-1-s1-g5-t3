@@ -23,6 +23,7 @@
       );
       const data = await response.json();
       books = data.docs.slice(0, 12); // Limitamos a 12 resultados
+      console.log('Libros encontrados:', books);
     } catch (error) {
       console.error('Error searching books:', error);
       books = [];
