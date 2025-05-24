@@ -4,16 +4,43 @@
   import Navbar from '$lib/components/Navbar.svelte';
 
   let favoriteGenre = '';
+  let favoriteAuthor = '';
   let totalBooks = 0;
   let isLoading = true;
+  let bookDetails: { [key: string]: any } = {};
+
+  async function fetchBookDetails(workId: string) {
+    try {
+      const response = await fetch(`https://openlibrary.org${workId}.json`);
+      if (!response.ok) throw new Error('Failed to fetch book details');
+      return await response.json();
+    } catch (error) {
+      console.error(`Error fetching details for work ${workId}:`, error);
+      return null;
+    }
+  }
+
+  async function loadBookDetails(books: any[]) {
+    const detailsPromises = books.map(async (book) => {
+      if (!bookDetails[book.key]) {
+        const details = await fetchBookDetails(book.key);
+        if (details) {
+          bookDetails[book.key] = details;
+        }
+      }
+    });
+    await Promise.all(detailsPromises);
+  }
 
   function calculateFavoriteGenre(books: any[]) {
     const genreCount: { [key: string]: number } = {};
     
     books.forEach(book => {
-      if (book.subject) {
-        // Tomamos los primeros 3 géneros de cada libro para evitar ruido
-        book.subject.slice(0, 3).forEach((subject: string) => {
+      const details = bookDetails[book.key];
+      console.log('details', details);
+      if (details?.subjects) {
+        // Tomamos los primeros 50 géneros de cada libro para evitar ruido
+        details.subjects.slice(0, 50).forEach((subject: string) => {
           // Limpiamos el género para agrupar mejor
           const cleanGenre = subject.toLowerCase()
             .replace(/^fiction\s*/, '')
@@ -35,10 +62,30 @@
     return sortedGenres.length > 0 ? sortedGenres[0][0] : 'No hay datos suficientes';
   }
 
+  function calculateFavoriteAuthor(books: any[]) {
+    const authorCount: { [key: string]: number } = {};
+    
+    books.forEach(book => {
+      console.log('book', book);
+      if (book.author_name) {
+        authorCount[book.author_name] = (authorCount[book.author_name] || 0) + 1;
+      }
+    });
+
+    const sortedAuthors = Object.entries(authorCount)
+      .sort(([, a], [, b]) => b - a);
+
+    return sortedAuthors.length > 0 ? sortedAuthors[0][0] : 'No hay datos suficientes';
+  }
+
   $: if ($readBooks) {
     totalBooks = $readBooks.length;
-    favoriteGenre = calculateFavoriteGenre($readBooks);
-    isLoading = false;
+    isLoading = true;
+    loadBookDetails($readBooks).then(() => {
+      favoriteGenre = calculateFavoriteGenre($readBooks);
+      favoriteAuthor = calculateFavoriteAuthor($readBooks);
+      isLoading = false;
+    });
   }
 </script>
 
@@ -73,6 +120,16 @@
               : 'Basado en tus libros leídos'}
           </p>
         </div>
+
+        <div class="stat-card">
+          <h2>Autor Favorito</h2>
+          <div class="stat-value author">{favoriteAuthor}</div>
+          <p class="stat-description">
+            {favoriteAuthor === 'No hay datos suficientes'
+              ? 'Agrega más libros para descubrir tu autor favorito'
+              : 'Basado en tus libros leídos'}
+          </p>
+        </div>
       </div>
     {/if}
   </div>
@@ -83,6 +140,7 @@
     padding-top: 5rem;
     min-height: 100vh;
     background-color: #ffffff;
+    font-family: 'Poppins', sans-serif;
   }
 
   .profile-content {
@@ -99,6 +157,8 @@
     font-weight: 600;
     position: relative;
     padding-bottom: 1rem;
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: -0.5px;
   }
 
   h1::after {
@@ -140,6 +200,8 @@
     font-size: 1.5rem;
     margin-bottom: 1rem;
     font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: -0.3px;
   }
 
   .stat-value {
@@ -148,11 +210,17 @@
     color: #5c4033;
     margin: 1rem 0;
     line-height: 1;
+    font-family: 'Poppins', sans-serif;
   }
 
   .stat-value.genre {
     font-size: 2rem;
     text-transform: capitalize;
+  }
+
+  .stat-value.author {
+    font-size: 1.75rem;
+    line-height: 1.2;
   }
 
   .stat-description {
@@ -161,6 +229,7 @@
     font-size: 1rem;
     margin: 0;
     line-height: 1.5;
+    font-family: 'Poppins', sans-serif;
   }
 
   .loading {
@@ -168,6 +237,7 @@
     color: #5c4033;
     font-size: 1.1rem;
     margin-top: 2rem;
+    font-family: 'Poppins', sans-serif;
   }
 
   @media (max-width: 768px) {
@@ -195,6 +265,10 @@
 
     .stat-value.genre {
       font-size: 1.75rem;
+    }
+
+    .stat-value.author {
+      font-size: 1.5rem;
     }
   }
 </style> 

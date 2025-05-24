@@ -85,6 +85,7 @@
     max-width: 1200px;
     margin: 2rem auto;
     padding: 0 1rem;
+    font-family: 'Poppins', sans-serif;
   }
 
   .no-results {
@@ -92,6 +93,7 @@
     color: #5c4033;
     font-size: 1.1rem;
     margin-top: 2rem;
+    font-family: 'Poppins', sans-serif;
   }
 
   .my-books-sections {
@@ -148,6 +150,7 @@
     font-size: 0.9rem;
     text-align: center;
     padding: 1rem;
+    font-family: 'Poppins', sans-serif;
   }
 
   .book-info {
@@ -165,6 +168,8 @@
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+    letter-spacing: -0.3px;
   }
 
   .book-author {
@@ -172,6 +177,7 @@
     color: #5c4033;
     opacity: 0.8;
     margin: 0 0 0.25rem 0;
+    font-family: 'Poppins', sans-serif;
   }
 
   .book-year {
@@ -179,6 +185,7 @@
     color: #5c4033;
     opacity: 0.6;
     margin: 0;
+    font-family: 'Poppins', sans-serif;
   }
 
   @media (max-width: 768px) {
@@ -189,6 +196,18 @@
 
     .book-cover {
       height: 220px;
+    }
+
+    .book-title {
+      font-size: 0.95rem;
+    }
+
+    .book-author {
+      font-size: 0.85rem;
+    }
+
+    .book-year {
+      font-size: 0.75rem;
     }
   }
 </style> 
