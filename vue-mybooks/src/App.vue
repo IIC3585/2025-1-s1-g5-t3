@@ -1,18 +1,19 @@
 <script setup>
-import BookList from './components/BookList.vue'
+import Navbar from './components/Navbar.vue'
 </script>
 
 <template>
   <div id="app">
-    <h1>MyBooks -VUE</h1>
-    <BookList />
+    <Navbar />
+    <div class="main-content">
+      <router-view />
+    </div>
   </div>
 </template>
 
 <style>
 #app {
-  font-family: sans-serif;
-  padding: 2rem;
+  text-align: center;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
 }
 </style>
-
