@@ -7,6 +7,8 @@
         :key="book.key || idx"
         :title="book.title"
         :cover-id="book.cover_i"
+        @click="handleClick(book)"
+        style="cursor:pointer"
       />
     </div>
     <button class="arrow" @click="next" :disabled="startIndex + visibleCount >= books.length">&#8594;</button>
@@ -23,6 +25,7 @@ const props = defineProps({
     required: true
   }
 })
+const emit = defineEmits(['book-click'])
 
 const visibleCount = 3
 const startIndex = ref(0)
@@ -37,40 +40,7 @@ function prev() {
 function next() {
   if (startIndex.value + visibleCount < props.books.length) startIndex.value++
 }
+function handleClick(book) {
+  emit('book-click', book)
+}
 </script>
-
-<style scoped>
-.carousel-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 2em 0;
-  gap: 1em;
-}
-.carousel {
-  display: flex;
-  overflow: hidden;
-  padding: 1em 0;
-}
-.arrow {
-  font-size: 2em;
-  background: #fff;
-  border: 2px solid #ccc;
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  cursor: pointer;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.arrow:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.arrow:not(:disabled):hover {
-  background: #f8cccc;
-  border-color: #f8cccc;
-}
-</style>
