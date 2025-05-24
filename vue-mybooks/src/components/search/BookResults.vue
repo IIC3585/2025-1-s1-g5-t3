@@ -7,13 +7,11 @@
         {{ libro.title }}<span v-if="libro.author_name"> — {{ libro.author_name[0] }}</span>
       </li>
     </ul>
-    <BookModal v-if="selectedBook" :book="selectedBook" @close="selectedBook = null" />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import BookModal from './BookModal.vue'
+import { useBookStore } from '../../stores/bookStore'
 
 const props = defineProps({
   libros: Array,
@@ -21,9 +19,10 @@ const props = defineProps({
   error: String
 })
 
-const selectedBook = ref(null)
+const bookStore = useBookStore()
+
 function openModal(book) {
-  selectedBook.value = book
+  bookStore.openBookModal(book)
 }
 </script>
 

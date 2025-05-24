@@ -21,9 +21,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import BookCard from './BookCard.vue'
-import eventBus from '../../utils/eventBus'
+import { useBookStore } from '../../stores/bookStore'
 
 const props = defineProps({
   books: {
@@ -34,14 +34,20 @@ const props = defineProps({
 })
 const emit = defineEmits(['book-click'])
 
+const bookStore = useBookStore()
 const visibleCount = 3
 const startIndex = ref(0)
 const isHighlighted = ref(false)
 
-// Importante: Observar cambios en la lista de libros
+// Observar cambios en la lista de libros
 watch(() => props.books, () => {
   // Resetear al principio cuando cambia la lista
   startIndex.value = 0
+  highlightCarousel()
+}, { deep: true })
+
+// Observar cambios en el store para resaltar el carrusel
+watch(() => bookStore.currentBooks, () => {
   highlightCarousel()
 }, { deep: true })
 
@@ -61,21 +67,12 @@ function handleClick(book) {
   emit('book-click', book)
 }
 
-// Escuchar cuando se añade un libro para animar el carrusel
 function highlightCarousel() {
   isHighlighted.value = true
   setTimeout(() => {
     isHighlighted.value = false
   }, 1000)
 }
-
-onMounted(() => {
-  eventBus.on('book-added', highlightCarousel)
-})
-
-onUnmounted(() => {
-  eventBus.off('book-added', highlightCarousel)
-})
 </script>
 
 <style scoped>

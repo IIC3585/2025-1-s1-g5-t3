@@ -10,17 +10,17 @@
           <p v-if="book.first_publish_year"><b>Año:</b> {{ book.first_publish_year }}</p>
           <div class="actions">
             <button
-              :class="{ active: readBooks.has(book.key) }"
-              @click="toggle(readBooks, book)"
-            >{{ readBooks.has(book.key) ? '✓ Leído' : 'Agregar a Leídos' }}</button>
+              :class="{ active: isInList('readBooks', book.key) }"
+              @click="toggleBook('read', book)"
+            >{{ isInList('readBooks', book.key) ? '✓ Leído' : 'Agregar a Leídos' }}</button>
             <button
-              :class="{ active: recommendedBooks.has(book.key) }"
-              @click="toggle(recommendedBooks, book)"
-            >{{ recommendedBooks.has(book.key) ? '✓ Recomendado' : 'Agregar a Recomendados' }}</button>
+              :class="{ active: isInList('recommendedBooks', book.key) }"
+              @click="toggleBook('recommended', book)"
+            >{{ isInList('recommendedBooks', book.key) ? '✓ Recomendado' : 'Agregar a Recomendados' }}</button>
             <button
-              :class="{ active: wantToReadBooks.has(book.key) }"
-              @click="toggle(wantToReadBooks, book)"
-            >{{ wantToReadBooks.has(book.key) ? '✓ Quiero Leer' : 'Agregar a Quiero Leer' }}</button>
+              :class="{ active: isInList('wantToReadBooks', book.key) }"
+              @click="toggleBook('want', book)"
+            >{{ isInList('wantToReadBooks', book.key) ? '✓ Quiero Leer' : 'Agregar a Quiero Leer' }}</button>
           </div>
           <div v-if="notification" class="notification" :class="notification.type">
             {{ notification.message }}
@@ -32,36 +32,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useBookLists } from '../../composables/useBookLists'
-import eventBus from '../../utils/eventBus'
+import { ref, computed } from 'vue'
+import { useBookStore } from '../../stores/bookStore'
 
-const props = defineProps({ book: Object })
-const emit = defineEmits(['close'])
-
-const { readBooks, recommendedBooks, wantToReadBooks } = useBookLists()
+const bookStore = useBookStore()
+const book = computed(() => bookStore.selectedBook)
 const notification = ref(null)
 
 function close() {
-  emit('close')
+  bookStore.closeBookModal()
 }
 
-function toggle(list, book) {
-  let listName = ''
-  if (list === readBooks) listName = 'read' 
-  else if (list === recommendedBooks) listName = 'recommended'
-  else if (list === wantToReadBooks) listName = 'want'
-  
-  if (list.has(book.key)) {
-    list.remove(book.key)
+function isInList(listName, bookKey) {
+  const list = bookStore[listName]
+  return list ? list.some(book => book.key === bookKey) : false
+}
+
+function toggleBook(listName, book) {
+  if (isInList(`${listName}Books`, book.key)) {
+    bookStore.removeBook(book.key, listName)
     showNotification('Libro quitado de la lista', 'removed')
-    // Notifica que se quitó un libro
-    eventBus.emit('book-removed', { listName, book })
   } else {
-    list.add(book)
+    bookStore.addBook(book, listName)
     showNotification('¡Libro añadido a tu lista!', 'added')
-    // Notifica que se agregó un libro
-    eventBus.emit('book-added', { listName, book })
   }
 }
 
