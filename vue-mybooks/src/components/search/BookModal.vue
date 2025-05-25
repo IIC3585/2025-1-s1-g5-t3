@@ -44,7 +44,7 @@
             >{{ isInList('recommendedBooks', book.key) ? '✓ Recomendado' : 'Agregar a Recomendados' }}</button>
             <button
               :class="{ active: isInList('wantToReadBooks', book.key) }"
-              @click="toggleBook('want', book)"
+              @click="toggleBook('wantToRead', book)"
             >{{ isInList('wantToReadBooks', book.key) ? '✓ Quiero Leer' : 'Agregar a Quiero Leer' }}</button>
           </div>
           <div v-if="notification" class="notification" :class="notification.type">
@@ -93,13 +93,19 @@ function isInList(listName, bookKey) {
 }
 
 function toggleBook(listName, book) {
-  const wasInList = isInList(`${listName}Books`, book.key)
+  // Mapear los nombres de lista para el store
+  let storeListName = listName;
+  if (listName === 'wantToRead') {
+    storeListName = 'want';
+  }
+  
+  const wasInList = isInList(`${listName === 'wantToRead' ? 'wantToReadBooks' : listName + 'Books'}`, book.key)
   
   if (wasInList) {
-    bookStore.removeBook(book.key, listName)
+    bookStore.removeBook(book.key, storeListName)
     showNotification('Libro quitado de la lista', 'removed')
   } else {
-    bookStore.addBook(book, listName)
+    bookStore.addBook(book, storeListName)
     showNotification('¡Libro añadido a tu lista!', 'added')
     
     // Si se agregó a "leídos", mostramos el modal de valoración
