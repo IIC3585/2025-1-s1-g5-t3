@@ -12,7 +12,7 @@
 <style scoped>
 .hero {
   background-color: #ffffff;
-  min-height: calc(100vh - 4rem);
+  
   display: flex;
   align-items: flex-start;
   justify-content: center;
