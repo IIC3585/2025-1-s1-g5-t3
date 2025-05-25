@@ -11,6 +11,7 @@ type Book = {
   language?: string[];
   subject?: string[];
   number_of_pages_median?: number;
+  rating?: number;
 };
 
 function createBookList(key: string) {
@@ -20,7 +21,25 @@ function createBookList(key: string) {
   return {
     subscribe,
     add: (book: Book) => update(books => {
+      const existingIndex = books.findIndex(b => b.key === book.key);
+      if (existingIndex !== -1) {
+        const newBooks = [...books];
+        newBooks[existingIndex] = book;
+        if (browser) {
+          localStorage.setItem(key, JSON.stringify(newBooks));
+        }
+        return newBooks;
+      }
       const newBooks = [...books, book];
+      if (browser) {
+        localStorage.setItem(key, JSON.stringify(newBooks));
+      }
+      return newBooks;
+    }),
+    update: (bookKey: string, updates: Partial<Book>) => update(books => {
+      const newBooks = books.map(book => 
+        book.key === bookKey ? { ...book, ...updates } : book
+      );
       if (browser) {
         localStorage.setItem(key, JSON.stringify(newBooks));
       }

@@ -17,8 +17,9 @@
   let currentIndex = 0;
   const booksPerPage = 3;
   
-  $: totalPages = Math.ceil(books.length / booksPerPage);
-  $: visibleBooks = books.slice(currentIndex * booksPerPage, (currentIndex + 1) * booksPerPage);
+  $: uniqueBooks = Array.from(new Map(books.map(book => [book.key, book])).values());
+  $: totalPages = Math.ceil(uniqueBooks.length / booksPerPage);
+  $: visibleBooks = uniqueBooks.slice(currentIndex * booksPerPage, (currentIndex + 1) * booksPerPage);
   
   function handleBookClick(book: typeof books[0]) {
     dispatch('bookClick', book);
