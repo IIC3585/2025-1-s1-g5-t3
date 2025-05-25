@@ -44,7 +44,7 @@ function setSelectedList(listName) {
 }
 
 function goToBook(book) {
-  window.open(`https://openlibrary.org${book.key}`, '_blank')
+  bookStore.openBookModal(book)
 }
 </script>
 

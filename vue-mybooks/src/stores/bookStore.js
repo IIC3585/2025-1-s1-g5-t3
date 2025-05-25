@@ -1,13 +1,28 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 export const useBookStore = defineStore('books', () => {
   // Estado
-  const readBooks = ref([])
-  const recommendedBooks = ref([])
-  const wantToReadBooks = ref([])
+  const readBooks = ref(loadFromLocalStorage('readBooks', []))
+  const recommendedBooks = ref(loadFromLocalStorage('recommendedBooks', []))
+  const wantToReadBooks = ref(loadFromLocalStorage('wantToReadBooks', []))
   const selectedList = ref('read')
   const selectedBook = ref(null)
+
+  // Persistencia en localStorage
+  watch(readBooks, value => saveToLocalStorage('readBooks', value), { deep: true })
+  watch(recommendedBooks, value => saveToLocalStorage('recommendedBooks', value), { deep: true })
+  watch(wantToReadBooks, value => saveToLocalStorage('wantToReadBooks', value), { deep: true })
+
+  // Funciones de persistencia
+  function loadFromLocalStorage(key, defaultValue) {
+    const stored = localStorage.getItem(key)
+    return stored ? JSON.parse(stored) : defaultValue
+  }
+
+  function saveToLocalStorage(key, value) {
+    localStorage.setItem(key, JSON.stringify(value))
+  }
 
   // Getters
   const currentBooks = computed(() => {
@@ -46,6 +61,16 @@ export const useBookStore = defineStore('books', () => {
     selectedBook.value = null
   }
 
+  // Nueva función para valoración
+  function rateBook(bookKey, rating) {
+    const book = readBooks.value.find(b => b.key === bookKey)
+    if (book) {
+      book.rating = rating
+      return true
+    }
+    return false
+  }
+
   // Helper
   function getListByName(listName) {
     switch (listName) {
@@ -70,6 +95,7 @@ export const useBookStore = defineStore('books', () => {
     removeBook,
     setSelectedList,
     openBookModal,
-    closeBookModal
+    closeBookModal,
+    rateBook
   }
-}) 
+})
