@@ -8,14 +8,17 @@
         </div>
         <div>
           <div><b>Autor:</b> {{ book.author }}</div>
-          <div><b>Tema:</b> {{ book.topic }}</div>
+          <div v-if="book.topic"><b>Tema:</b> {{ book.topic }}</div>
           <div><b>Rating:</b> {{ book.rating }} ⭐</div>
         </div>
       </div>
     </div>
     <div class="suggestions">
       <div class="suggestion-title">Te podrían gustar:</div>
-      <div class="suggested-books">
+      <div v-if="suggestions.length === 0" class="no-suggestions">
+        Cargando sugerencias...
+      </div>
+      <div v-else class="suggested-books">
         <div v-for="s in suggestions" :key="s.id" class="suggested-book">
           <img :src="s.cover" alt="cover" />
           <div class="suggested-title">{{ s.title }}</div>
@@ -28,8 +31,14 @@
 
 <script setup>
 const props = defineProps({
-  book: Object,
-  suggestions: Array
+  book: {
+    type: Object,
+    required: true
+  },
+  suggestions: {
+    type: Array,
+    default: () => []
+  }
 })
 </script>
 
@@ -100,5 +109,10 @@ const props = defineProps({
 .suggested-author {
   font-size: 0.95em;
   color: #666;
+}
+.no-suggestions {
+  font-style: italic;
+  color: #999;
+  padding: 1em 0;
 }
 </style>
