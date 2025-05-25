@@ -2,6 +2,7 @@
   import { readBooks } from '$lib/stores/bookLists';
   import { onMount } from 'svelte';
   import Navbar from '$lib/components/Navbar.svelte';
+  import ProfileStats from '$lib/components/ProfileStats.svelte';
 
   let favoriteGenre = '';
   let favoriteAuthor = '';
@@ -94,44 +95,29 @@
 <main class="profile-container">
   <div class="profile-content">
     <h1>Mi Perfil de Lectura</h1>
-
-    {#if isLoading}
-      <div class="loading">Cargando estadísticas...</div>
-    {:else}
-      <div class="stats-container">
-        <div class="stat-card">
-          <h2>Libros Leídos</h2>
-          <div class="stat-value">{totalBooks}</div>
-          <p class="stat-description">
-            {totalBooks === 0 
-              ? 'Aún no has agregado libros a tu lista de leídos'
-              : totalBooks === 1 
-                ? '¡Has leído 1 libro!'
-                : `¡Has leído ${totalBooks} libros!`}
-          </p>
-        </div>
-
-        <div class="stat-card">
-          <h2>Género Favorito</h2>
-          <div class="stat-value genre">{favoriteGenre}</div>
-          <p class="stat-description">
-            {favoriteGenre === 'No hay datos suficientes'
-              ? 'Agrega más libros para descubrir tu género favorito'
-              : 'Basado en tus libros leídos'}
-          </p>
-        </div>
-
-        <div class="stat-card">
-          <h2>Autor Favorito</h2>
-          <div class="stat-value author">{favoriteAuthor}</div>
-          <p class="stat-description">
-            {favoriteAuthor === 'No hay datos suficientes'
-              ? 'Agrega más libros para descubrir tu autor favorito'
-              : 'Basado en tus libros leídos'}
-          </p>
-        </div>
+    
+    <div class="profile-layout">
+      <div class="stats-section">
+        <ProfileStats />
       </div>
-    {/if}
+      
+      <div class="navigation-section">
+        <a href="/authors" class="nav-button">
+          <span class="button-icon">👥</span>
+          <span class="button-text">Autores</span>
+        </a>
+        
+        <a href="/subjects" class="nav-button">
+          <span class="button-icon">📚</span>
+          <span class="button-text">Temas</span>
+        </a>
+        
+        <a href="/my-books" class="nav-button">
+          <span class="button-icon">📖</span>
+          <span class="button-text">Mis libros</span>
+        </a>
+      </div>
+    </div>
   </div>
 </main>
 
@@ -173,71 +159,67 @@
     border-radius: 2px;
   }
 
-  .stats-container {
+  .profile-layout {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: 1fr 300px;
     gap: 2rem;
-    margin-top: 2rem;
+    align-items: start;
   }
 
-  .stat-card {
+  .navigation-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: sticky;
+    top: 6rem;
+  }
+
+  .nav-button {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
     background: #f5f0e6;
-    border-radius: 16px;
-    padding: 2rem;
-    text-align: center;
-    box-shadow: 0 4px 12px rgba(92, 64, 51, 0.08);
-    border: 1px solid rgba(92, 64, 51, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .stat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(92, 64, 51, 0.12);
-  }
-
-  .stat-card h2 {
+    border-radius: 12px;
+    text-decoration: none;
     color: #5c4033;
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
     font-weight: 600;
-    font-family: 'Poppins', sans-serif;
-    letter-spacing: -0.3px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(92, 64, 51, 0.1);
+    box-shadow: 0 4px 12px rgba(92, 64, 51, 0.08);
   }
 
-  .stat-value {
-    font-size: 3rem;
-    font-weight: 700;
-    color: #5c4033;
-    margin: 1rem 0;
-    line-height: 1;
-    font-family: 'Poppins', sans-serif;
+  .nav-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(92, 64, 51, 0.12);
+    background: #ebe4d6;
   }
 
-  .stat-value.genre {
-    font-size: 2rem;
-    text-transform: capitalize;
+  .button-icon {
+    font-size: 1.5rem;
   }
 
-  .stat-value.author {
-    font-size: 1.75rem;
-    line-height: 1.2;
-  }
-
-  .stat-description {
-    color: #5c4033;
-    opacity: 0.8;
-    font-size: 1rem;
-    margin: 0;
-    line-height: 1.5;
-    font-family: 'Poppins', sans-serif;
-  }
-
-  .loading {
-    text-align: center;
-    color: #5c4033;
+  .button-text {
     font-size: 1.1rem;
-    margin-top: 2rem;
     font-family: 'Poppins', sans-serif;
+  }
+
+  @media (max-width: 1024px) {
+    .profile-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .navigation-section {
+      position: static;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+
+    .nav-button {
+      flex: 1;
+      min-width: 200px;
+      justify-content: center;
+    }
   }
 
   @media (max-width: 768px) {
@@ -250,25 +232,12 @@
       margin-bottom: 2rem;
     }
 
-    .stats-container {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
+    .navigation-section {
+      flex-direction: column;
     }
 
-    .stat-card {
-      padding: 1.5rem;
-    }
-
-    .stat-value {
-      font-size: 2.5rem;
-    }
-
-    .stat-value.genre {
-      font-size: 1.75rem;
-    }
-
-    .stat-value.author {
-      font-size: 1.5rem;
+    .nav-button {
+      width: 100%;
     }
   }
 </style> 

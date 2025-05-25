@@ -3,6 +3,7 @@
   import { fade, slide } from 'svelte/transition';
   import { readBooks, recommendedBooks, wantToReadBooks } from '$lib/stores/bookLists';
   import Notification from './Notification.svelte';
+  import RatingModal from './RatingModal.svelte';
   
   export let isOpen = false;
   export let book: {
@@ -15,20 +16,28 @@
     language?: string[];
     subject?: string[];
     number_of_pages_median?: number;
+    rating?: number;
   } | null = null;
+
+  console.log('Book:', book);
 
   const dispatch = createEventDispatcher();
   let isInReadList = false;
   let isInRecommendedList = false;
   let isInWantToReadList = false;
+  let showRatingModal = false;
+  let currentRating = 0;
 
   let notificationMessage = '';
   let notificationType: 'success' | 'error' = 'success';
+
+  let hoveredRating = 0;
 
   $: if (book) {
     isInReadList = readBooks.has(book.key);
     isInRecommendedList = recommendedBooks.has(book.key);
     isInWantToReadList = wantToReadBooks.has(book.key);
+    currentRating = book.rating ?? 0;
   }
 
   function showNotification(message: string, type: 'success' | 'error' = 'success') {
@@ -61,17 +70,51 @@
     img.src = 'https://via.placeholder.com/300x400?text=No+Image';
   }
 
+  function handleRatingClick(newRating: number) {
+    if (book && isInReadList) {
+      currentRating = newRating;
+      readBooks.update(book.key, { rating: newRating });
+      showNotification('Calificación actualizada');
+    }
+  }
+
+  function handleRatingSave(event: CustomEvent<{ rating: number }>) {
+    if (book) {
+      const updatedBook = { ...book, rating: event.detail.rating };
+      readBooks.add(updatedBook);
+      book = updatedBook;
+      currentRating = event.detail.rating;
+      showNotification('Libro agregado a Leídos con calificación');
+      isInReadList = true;
+    }
+  }
+
+  function handleRatingHover(newRating: number) {
+    if (isInReadList) {
+      hoveredRating = newRating;
+    }
+  }
+
+  function handleRatingLeave() {
+    hoveredRating = 0;
+  }
+
+  function handleRatingClose() {
+    showRatingModal = false;
+  }
+
   function toggleReadList() {
     if (book) {
       try {
         if (isInReadList) {
           readBooks.remove(book.key);
+          book = { ...book, rating: undefined };
+          currentRating = 0;
           showNotification('Libro removido de Leídos');
+          isInReadList = false;
         } else {
-          readBooks.add(book);
-          showNotification('Libro agregado a Leídos');
+          showRatingModal = true;
         }
-        isInReadList = !isInReadList;
       } catch (error) {
         showNotification('Error al actualizar la lista', 'error');
       }
@@ -109,6 +152,12 @@
       } catch (error) {
         showNotification('Error al actualizar la lista', 'error');
       }
+    }
+  }
+
+  function openBookDetails() {
+    if (book) {
+      window.open(`https://openlibrary.org${book.key}`, '_blank');
     }
   }
 </script>
@@ -190,6 +239,34 @@
             </div>
           {/if}
 
+          {#if book.rating !== undefined || isInReadList}
+            <div 
+              class="book-rating"
+              on:mouseleave={handleRatingLeave}
+              role="group"
+              aria-label="Calificación del libro"
+            >
+              <span class="label">Calificación:</span>
+              <div class="stars-display">
+                {#each Array(5) as _, i}
+                  <button
+                    class="star-button"
+                    class:active={(hoveredRating || currentRating) > i}
+                    on:click={() => handleRatingClick(i + 1)}
+                    on:mouseenter={() => handleRatingHover(i + 1)}
+                    disabled={!isInReadList}
+                    aria-label={`Calificar ${i + 1} de 5`}
+                  >
+                    ★
+                  </button>
+                {/each}
+                {#if currentRating > 0}
+                  <span class="rating-value">({currentRating})</span>
+                {/if}
+              </div>
+            </div>
+          {/if}
+
           <div class="book-actions">
             <button 
               class="action-button" 
@@ -212,12 +289,25 @@
             >
               {isInWantToReadList ? '✓ Quiero Leer' : 'Agregar a Quiero Leer'}
             </button>
+            <button 
+              class="action-button view-details-button"
+              on:click={openBookDetails}
+            >
+              Ver detalle del libro
+            </button>
           </div>
         </div>
       </div>
     </div>
   </div>
 {/if}
+
+<RatingModal
+  isOpen={showRatingModal}
+  bookKey={book?.key ?? ''}
+  on:save={handleRatingSave}
+  on:close={handleRatingClose}
+/>
 
 <style>
   .modal-backdrop {
@@ -378,6 +468,59 @@
     color: white;
   }
 
+  .book-rating {
+    margin-top: 0.5rem;
+  }
+
+  .stars-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: 0.5rem;
+  }
+
+  .star-button {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #ddd;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s ease;
+  }
+
+  .star-button:not(:disabled):hover {
+    transform: scale(1.1);
+  }
+
+  .star-button.active {
+    color: #ffd700;
+  }
+
+  .star-button:disabled {
+    cursor: default;
+  }
+
+  .star-button:disabled:hover {
+    transform: none;
+  }
+
+  .rating-value {
+    color: #5c4033;
+    font-size: 0.9rem;
+    margin-left: 0.5rem;
+  }
+
+  .action-button.view-details-button {
+    background: #5c4033;
+    color: white;
+    margin-top: 0.5rem;
+  }
+
+  .action-button.view-details-button:hover {
+    background: #4a3329;
+  }
+
   @media (max-width: 768px) {
     .modal-body {
       grid-template-columns: 1fr;
@@ -385,6 +528,10 @@
 
     .book-cover-large {
       height: 300px;
+    }
+
+    .book-cover-large img {
+      height: 100%;
     }
 
     .book-title {
