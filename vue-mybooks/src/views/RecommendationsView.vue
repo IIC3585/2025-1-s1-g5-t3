@@ -1,133 +1,113 @@
 <template>
   <div class="recommendations-view">
     <h2>Recomendaciones para ti</h2>
-    <RecommendationBlock
-      v-for="book in topRatedBooks"
-      :key="book.id"
-      :book="book"
-      :suggestions="getSuggestions(book.topic, book.id)"
-    />
+    
+    <div v-if="loading" class="loading">
+      <p>Cargando recomendaciones...</p>
+    </div>
+    
+    <div v-else-if="error" class="error">
+      <p>{{ error }}</p>
+    </div>
+    
+    <div v-else-if="topRatedBooks.length === 0" class="empty">
+      <p>Añade libros con valoraciones altas (4-5 estrellas) para ver recomendaciones personalizadas.</p>
+    </div>
+    
+    <template v-else>
+      <RecommendationBlock
+        v-for="book in topRatedBooks"
+        :key="book.key"
+        :book="formatBook(book)"
+        :suggestions="recomendacionesPorLibro[book.key] || []"
+      />
+    </template>
   </div>
 </template>
 
 <script setup>
+import { ref, computed, onMounted } from 'vue'
 import RecommendationBlock from '../components/recommendations/RecommendationBlock.vue'
+import { useBookStore } from '../stores/bookStore'
+import { buscarLibrosPorTema } from '../services/openLibrary'
 
-const userBooks = [
-  {
-    id: 1,
-    title: 'Harry Potter y la piedra filosofal',
-    author: 'J.K. Rowling',
-    topic: 'Fantasía',
-    rating: 5,
-    cover: 'https://covers.openlibrary.org/b/id/7984916-L.jpg'
-  },
-  {
-    id: 2,
-    title: 'El Hobbit',
-    author: 'J.R.R. Tolkien',
-    topic: 'Fantasía',
-    rating: 4,
-    cover: 'https://covers.openlibrary.org/b/id/6979861-L.jpg'
-  },
-  {
-    id: 3,
-    title: 'Cien años de soledad',
-    author: 'Gabriel García Márquez',
-    topic: 'Realismo mágico',
-    rating: 5,
-    cover: 'https://covers.openlibrary.org/b/id/8372216-L.jpg'
-  },
-  {
-    id: 4,
-    title: 'Orgullo y prejuicio',
-    author: 'Jane Austen',
-    topic: 'Romance',
-    rating: 2,
-    cover: 'https://covers.openlibrary.org/b/id/8228691-L.jpg'
-  }
-]
+// Usar el store en lugar de datos estáticos
+const bookStore = useBookStore()
 
-// Libros ficticios para sugerencias por tema
-const suggestedBooks = [
-  // Fantasía
-  {
-    id: 10,
-    title: 'Las crónicas de Narnia',
-    author: 'C.S. Lewis',
-    topic: 'Fantasía',
-    cover: 'https://covers.openlibrary.org/b/id/8231856-L.jpg'
-  },
-  {
-    id: 11,
-    title: 'Eragon',
-    author: 'Christopher Paolini',
-    topic: 'Fantasía',
-    cover: 'https://covers.openlibrary.org/b/id/8231857-L.jpg'
-  },
-  {
-    id: 12,
-    title: 'Percy Jackson y el ladrón del rayo',
-    author: 'Rick Riordan',
-    topic: 'Fantasía',
-    cover: 'https://covers.openlibrary.org/b/id/8231858-L.jpg'
-  },
-  // Realismo mágico
-  {
-    id: 20,
-    title: 'La casa de los espíritus',
-    author: 'Isabel Allende',
-    topic: 'Realismo mágico',
-    cover: 'https://covers.openlibrary.org/b/id/8231859-L.jpg'
-  },
-  {
-    id: 21,
-    title: 'Pedro Páramo',
-    author: 'Juan Rulfo',
-    topic: 'Realismo mágico',
-    cover: 'https://covers.openlibrary.org/b/id/8231860-L.jpg'
-  },
-  {
-    id: 22,
-    title: 'El otoño del patriarca',
-    author: 'Gabriel García Márquez',
-    topic: 'Realismo mágico',
-    cover: 'https://covers.openlibrary.org/b/id/8231861-L.jpg'
-  },
-  // Romance
-  {
-    id: 30,
-    title: 'Jane Eyre',
-    author: 'Charlotte Brontë',
-    topic: 'Romance',
-    cover: 'https://covers.openlibrary.org/b/id/8231862-L.jpg'
-  },
-  {
-    id: 31,
-    title: 'Anna Karenina',
-    author: 'León Tolstói',
-    topic: 'Romance',
-    cover: 'https://covers.openlibrary.org/b/id/8231863-L.jpg'
-  },
-  {
-    id: 32,
-    title: 'Cumbres Borrascosas',
-    author: 'Emily Brontë',
-    topic: 'Romance',
-    cover: 'https://covers.openlibrary.org/b/id/8231864-L.jpg'
-  }
-]
+const loading = ref(false)
+const error = ref(null)
+const recomendacionesPorLibro = ref({})
 
-// Filtrar libros del usuario con rating 4 o 5, descendente
-const topRatedBooks = userBooks
-  .filter(b => b.rating >= 4)
-  .sort((a, b) => b.rating - a.rating)
+// Filtra libros con rating alto del store
+const topRatedBooks = computed(() => {
+  return bookStore.readBooks
+    .filter(book => book.rating >= 4)
+    .sort((a, b) => b.rating - a.rating);
+})
 
-function getSuggestions(topic, excludeId) {
-  return suggestedBooks
-    .filter(b => b.topic === topic && b.id !== excludeId)
-    .slice(0, 3)
+// Formatea los libros para que coincidan con el formato esperado por RecommendationBlock
+function formatBook(book) {
+  return {
+    id: book.key,
+    title: book.title,
+    author: book.author_name ? book.author_name[0] : 'Desconocido',
+    topic: getBookTopic(book),
+    rating: book.rating,
+    cover: book.cover_i 
+      ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg`
+      : 'https://covers.openlibrary.org/b/id/10909258-L.jpg' // Imagen por defecto
+  };
 }
+
+// Extrae un tema/género del libro
+function getBookTopic(book) {
+  if (book.subject && book.subject.length > 0) {
+    return book.subject[0];
+  }
+  
+  // Algunos libros tienen el campo 'genre' en OpenLibrary
+  if (book.genre && book.genre.length > 0) {
+    return book.genre[0];
+  }
+  
+  // Si no hay tema definido, usa el título para recomendar libros similares
+  return book.title;
+}
+
+// Carga recomendaciones para todos los libros con alta valoración
+async function cargarRecomendaciones() {
+  if (topRatedBooks.value.length === 0) return;
+  
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    for (const book of topRatedBooks.value) {
+      const tema = getBookTopic(book);
+      const sugerencias = await buscarLibrosPorTema(tema, book.key);
+      
+      // Formatea las sugerencias
+      const formattedSugerencias = sugerencias.map(sugerencia => ({
+        id: sugerencia.key,
+        title: sugerencia.title,
+        author: sugerencia.author_name ? sugerencia.author_name[0] : 'Desconocido',
+        cover: sugerencia.cover_i 
+          ? `https://covers.openlibrary.org/b/id/${sugerencia.cover_i}-L.jpg`
+          : 'https://covers.openlibrary.org/b/id/10909258-L.jpg'
+      }));
+      
+      recomendacionesPorLibro.value[book.key] = formattedSugerencias;
+    }
+  } catch (err) {
+    console.error('Error al cargar recomendaciones:', err);
+    error.value = 'No pudimos cargar las recomendaciones. Intenta más tarde.';
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Cargar recomendaciones cuando se monta el componente
+onMounted(cargarRecomendaciones);
 </script>
 
 <style scoped>
@@ -135,5 +115,24 @@ function getSuggestions(topic, excludeId) {
   max-width: 900px;
   margin: 2em auto;
   padding: 1em;
+}
+
+.loading, .error, .empty {
+  background: #fff;
+  padding: 2em;
+  border-radius: 12px;
+  text-align: center;
+  margin: 2em 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.error {
+  color: #a33;
+  border: 1px solid #f8cccc;
+}
+
+.empty {
+  color: #666;
+  font-style: italic;
 }
 </style>

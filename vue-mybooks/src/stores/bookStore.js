@@ -36,6 +36,10 @@ export const useBookStore = defineStore('books', () => {
   function addBook(book, listName) {
     const targetList = getListByName(listName)
     if (targetList && !targetList.value.some(b => b.key === book.key)) {
+      // Si es un libro leído, inicializar con rating 0 si no tiene
+      if (listName === 'read' && typeof book.rating === 'undefined') {
+        book.rating = 0
+      }
       targetList.value.push(book)
       selectedList.value = listName
     }
