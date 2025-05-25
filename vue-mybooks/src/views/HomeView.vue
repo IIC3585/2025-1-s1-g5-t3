@@ -1,4 +1,5 @@
 <template>
+  <Hero />
   <BookSearchContainer />
   <div class="carousel-section">
     <h2>Mis colecciones</h2>
@@ -25,6 +26,7 @@ import { useRouter } from 'vue-router'
 import { useBookStore } from '../stores/bookStore'
 import BookSearchContainer from '../components/search/BookSearchContainer.vue'
 import BookCarousel from '../components/carousel/BookCarousel.vue'
+import Hero from '../components/search/Hero.vue'
 
 const router = useRouter()
 const bookStore = useBookStore()
