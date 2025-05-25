@@ -1,23 +1,7 @@
 <template>
   <Hero />
   <BookSearchContainer />
-  <div class="carousel-section">
-    <h2>Mis colecciones</h2>
-    <div class="carousel-selector">
-      <button
-        v-for="option in options"
-        :key="option.key"
-        :class="{ active: selectedList === option.key }"
-        @click="setSelectedList(option.key)"
-      >
-        {{ option.label }}
-      </button>
-    </div>
-    <BookCarousel :books="currentBooks" @book-click="goToBook" />
-    <p v-if="currentBooks.length === 0" class="empty-list-help">
-      Añade libros a tu lista usando el buscador de arriba
-    </p>
-  </div>
+
 </template>
 
 <script setup>
