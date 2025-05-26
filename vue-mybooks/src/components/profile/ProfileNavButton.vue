@@ -8,6 +8,7 @@
 import { useRouter } from 'vue-router'
 const props = defineProps({ to: String })
 const router = useRouter()
+
 function go() {
   router.push(props.to)
 }
@@ -16,20 +17,27 @@ function go() {
 <style scoped>
 .profile-nav-btn {
   width: 100%;
-  padding: 1.2em 0;
-  margin-bottom: 1.5em;
-  font-size: 1.2em;
-  background: #fff;
-  border: 2px solid #ccc;
-  border-radius: 20px;
-  color: #222;
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #f5f0e6;
+  border-radius: 12px;
+  border: 1px solid rgba(92, 64, 51, 0.1);
+  box-shadow: 0 4px 12px rgba(92, 64, 51, 0.08);
+  color: #5c4033;
+  font-weight: 600;
+  font-size: 1.1rem;
+  font-family: 'Poppins', sans-serif;
   cursor: pointer;
-  transition: background 0.2s, border 0.2s, color 0.2s;
+  transition: all 0.3s ease;
 }
+
 .profile-nav-btn:hover {
-  background: #f8cccc;
-  border-color: #f8cccc;
-  color: #a33;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(92, 64, 51, 0.12);
+  background: #ebe4d6;
+  border-color: rgba(92, 64, 51, 0.3);
+  color: #5c4033;
 }
 </style>

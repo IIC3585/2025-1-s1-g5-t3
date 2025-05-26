@@ -42,11 +42,11 @@ function openModal(book) {
   max-width: 90vw;
   height: 150px;
   overflow-y: auto;
-  border: 2px solid #ccc;
+
   border-radius: 12px;
   padding: 1em;
   margin-top: 1em;
-  box-shadow: 0 2px 8px #0001;
+
 }
 
 ul {

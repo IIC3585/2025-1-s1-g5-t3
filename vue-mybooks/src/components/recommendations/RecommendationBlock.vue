@@ -19,11 +19,13 @@
         Cargando sugerencias...
       </div>
       <div v-else class="suggested-books">
+
         <div 
           v-for="s in suggestions" 
           :key="s.id" 
           class="suggested-book"
           @click="openBookModal(s)"
+
         >
           <img :src="s.cover" alt="cover" />
           <div class="suggested-title">{{ s.title }}</div>
@@ -35,9 +37,11 @@
 </template>
 
 <script setup>
+
 import { useBookStore } from '../../stores/bookStore'
 
 const props = defineProps({
+
   book: {
     type: Object,
     required: true
@@ -47,6 +51,7 @@ const props = defineProps({
     default: () => []
   }
 })
+
 
 const bookStore = useBookStore()
 
@@ -63,6 +68,7 @@ function openBookModal(book) {
   console.log('Book for modal:', bookForModal);
   bookStore.openBookModal(bookForModal)
 }
+
 </script>
 
 <style scoped>
@@ -115,11 +121,13 @@ function openBookModal(book) {
 .suggested-book {
   width: 110px;
   text-align: center;
+
   cursor: pointer;
   transition: transform 0.2s;
 }
 .suggested-book:hover {
   transform: translateY(-5px);
+
 }
 .suggested-book img {
   width: 90px;
@@ -143,4 +151,6 @@ function openBookModal(book) {
   color: #999;
   padding: 1em 0;
 }
+
+
 </style>
