@@ -15,21 +15,25 @@
     </div>
     
     <template v-else>
-      <RecommendationBlock
-        v-for="book in topRatedBooks"
-        :key="book.key"
-        :book="formatBook(book)"
-        :suggestions="recomendacionesPorLibro[book.key] || []"
-      />
+      <div v-for="book in topRatedBooks" :key="book.key">
+        <RecommendationBlock
+          v-if="librosFormateados[book.key]"
+          :book="librosFormateados[book.key]"
+          :suggestions="recomendacionesPorLibro[book.key] || []"
+        />
+      </div>
     </template>
+
+    <BookModal />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import RecommendationBlock from '../components/recommendations/RecommendationBlock.vue'
+import BookModal from '../components/search/BookModal.vue'
 import { useBookStore } from '../stores/bookStore'
-import { buscarLibrosPorTema } from '../services/openLibrary'
+import { buscarLibrosPorTema, buscarDetalleDeLibro } from '../services/openLibrary'
 
 // Usar el store en lugar de datos estáticos
 const bookStore = useBookStore()
@@ -37,6 +41,7 @@ const bookStore = useBookStore()
 const loading = ref(false)
 const error = ref(null)
 const recomendacionesPorLibro = ref({})
+const librosFormateados = ref({})
 
 // Filtra libros con rating alto del store
 const topRatedBooks = computed(() => {
@@ -46,28 +51,42 @@ const topRatedBooks = computed(() => {
 })
 
 // Formatea los libros para que coincidan con el formato esperado por RecommendationBlock
-function formatBook(book) {
-  return {
+async function formatBook(book) {
+  // Si ya tenemos el libro formateado, lo retornamos
+  if (librosFormateados.value[book.key]) {
+    return librosFormateados.value[book.key];
+  }
+
+  const tema = await getBookTopic(book);
+  const libroFormateado = {
     id: book.key,
     title: book.title,
     author: book.author_name ? book.author_name[0] : 'Desconocido',
-    topic: getBookTopic(book),
+    topic: tema,
     rating: book.rating,
     cover: book.cover_i 
       ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg`
       : 'https://covers.openlibrary.org/b/id/10909258-L.jpg' // Imagen por defecto
   };
+
+  // Guardamos el libro formateado para futuras referencias
+  librosFormateados.value[book.key] = libroFormateado;
+  return libroFormateado;
 }
 
 // Extrae un tema/género del libro
-function getBookTopic(book) {
-  if (book.subject && book.subject.length > 0) {
-    return book.subject[0];
-  }
-  
-  // Algunos libros tienen el campo 'genre' en OpenLibrary
-  if (book.genre && book.genre.length > 0) {
-    return book.genre[0];
+async function getBookTopic(book) {
+  // Si hay subjects disponibles, obtén uno al azar
+  const bookDetails = await buscarDetalleDeLibro(book.key);
+  if (bookDetails.subjects && bookDetails.subjects.length > 0) {
+    // Filtrar solo temas de una palabra
+    const singleWordSubjects = bookDetails.subjects.filter(subject => !subject.includes(' '));
+    
+    if (singleWordSubjects.length > 0) {
+      const randomIndex = Math.floor(Math.random() * singleWordSubjects.length);
+      console.log('Random Subject:', singleWordSubjects[randomIndex].toLowerCase());
+      return singleWordSubjects[randomIndex].toLowerCase();
+    }
   }
   
   // Si no hay tema definido, usa el título para recomendar libros similares
@@ -83,16 +102,19 @@ async function cargarRecomendaciones() {
   
   try {
     for (const book of topRatedBooks.value) {
-      const tema = getBookTopic(book);
+      const libroFormateado = await formatBook(book);
+      const tema = libroFormateado.topic;
+      console.log('Tema:', tema);
       const sugerencias = await buscarLibrosPorTema(tema, book.key);
       
       // Formatea las sugerencias
+      console.log('Sugerencias:', sugerencias);
       const formattedSugerencias = sugerencias.map(sugerencia => ({
         id: sugerencia.key,
         title: sugerencia.title,
-        author: sugerencia.author_name ? sugerencia.author_name[0] : 'Desconocido',
-        cover: sugerencia.cover_i 
-          ? `https://covers.openlibrary.org/b/id/${sugerencia.cover_i}-L.jpg`
+        author: sugerencia.authors ? sugerencia.authors[0].name : 'Desconocido',
+        cover: sugerencia.cover_id 
+          ? `https://covers.openlibrary.org/b/id/${sugerencia.cover_id}-L.jpg`
           : 'https://covers.openlibrary.org/b/id/10909258-L.jpg'
       }));
       

@@ -6,14 +6,23 @@
       <div class="spacer"></div>
     </div>
     
-    <div v-if="!hasBooks" class="empty-state">
+    <div v-if="loading" class="loading-state">
+      <p>Cargando temas...</p>
+    </div>
+    
+    <div v-else-if="!hasReadBooks" class="empty-state">
       <p>No hay libros agregados a tus colecciones.</p>
       <p>Agrega algunos libros para ver tus temas aquí.</p>
     </div>
     
+    <div v-else-if="!hasBooks" class="empty-state">
+      <p>No se encontraron temas para tus libros.</p>
+      <p>Los libros necesitan tener temas asignados para mostrarse aquí.</p>
+    </div>
+    
     <div v-else class="topics-grid">
       <div v-for="(books, topic) in booksByTopic" :key="topic" class="topic-section">
-        <h3 class="topic-name">{{ topic }}</h3>
+        <h3 class="topic-name">{{ topic }} ({{ books.length }} libros)</h3>
         <div class="topic-books">
           <div v-for="book in books" :key="book.key" class="book-card" @click="openBookModal(book)">
             <div class="book-cover">
@@ -46,62 +55,134 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import BackToProfile from '../components/profile/BackToProfile.vue'
 import { useBookStore } from '../stores/bookStore'
 import BookModal from '../components/search/BookModal.vue'
+import { buscarDetalleDeLibro, buscarLibrosPorTema } from '../services/openLibrary'
 
 const bookStore = useBookStore()
+const loading = ref(true)
+const bookDetails = ref({})
+const bookTopics = ref({})
+const topicFrequency = ref({})
 
-// Obtener todos los libros únicos agrupados por tema/género
-const booksByTopic = computed(() => {
-  // 1. Combinar todos los libros de las tres colecciones
-  const allBooks = [
-    ...bookStore.readBooks,
-    ...bookStore.recommendedBooks,
-    ...bookStore.wantToReadBooks
-  ]
+// Verificar si hay libros leídos
+const hasReadBooks = computed(() => bookStore.readBooks.length > 0)
+
+// Función para obtener todos los temas de un libro
+async function getBookTopics(book) {
+  console.log('Getting topics for book:', book.key, book.title)
   
-  // 2. Eliminar duplicados usando un Set para las claves
-  const uniqueBooks = []
-  const uniqueKeys = new Set()
+  // Si ya tenemos los temas guardados, los retornamos
+  if (bookTopics.value[book.key]) {
+    return bookTopics.value[book.key]
+  }
   
-  allBooks.forEach(book => {
-    if (!uniqueKeys.has(book.key)) {
-      uniqueKeys.add(book.key)
-      uniqueBooks.push(book)
+  if (!bookDetails.value[book.key]) {
+    const details = await buscarDetalleDeLibro(book.key)
+    console.log('Details:', details)
+    bookDetails.value[book.key] = details
+  }
+  
+  const details = bookDetails.value[book.key]
+  let topics = ['Sin clasificación']
+  
+  if (details?.subjects && details.subjects.length > 0) {
+    // Filtrar solo temas de una palabra y limpiar el tema
+    topics = details.subjects
+      .filter(subject => !subject.includes(' '))
+      .map(subject => subject.toLowerCase()
+        .replace(/^fiction\s*/, '')
+        .replace(/^novels\s*/, '')
+        .replace(/^stories\s*/, '')
+        .trim()
+      )
+      .filter(subject => subject)
+    
+    if (topics.length === 0) {
+      topics = ['Sin clasificación']
     }
-  })
+  }
   
-  // 3. Agrupar por tema/género
+  console.log('Book topics:', book.title, topics)
+  // Guardar los temas para este libro
+  bookTopics.value[book.key] = topics
+  return topics
+}
+
+// Cargar detalles de los libros y calcular frecuencia de temas
+async function loadBookDetails() {
+  console.log('Starting loadBookDetails, readBooks:', bookStore.readBooks)
+  loading.value = true
+  const readBooks = bookStore.readBooks
+  
+  if (readBooks.length === 0) {
+    console.log('No read books found')
+    loading.value = false
+    return
+  }
+  
+  // Reiniciar los contadores
+  topicFrequency.value = {}
+  bookTopics.value = {}
+  
+  // Cargar detalles y contar frecuencia de temas
+  for (const book of readBooks) {
+    const topics = await getBookTopics(book)
+    console.log('Book topics:', book.title, topics)
+    // Contar cada tema del libro
+    topics.forEach(topic => {
+      topicFrequency.value[topic] = (topicFrequency.value[topic] || 0) + 1
+    })
+  }
+  
+  console.log('Final topic frequency:', topicFrequency.value)
+  loading.value = false
+}
+
+// Obtener los libros agrupados por tema
+const booksByTopic = computed(() => {
+  console.log('Computing booksByTopic, topicFrequency:', topicFrequency.value)
+  // Obtener los 5 temas más frecuentes
+  const topTopics = Object.entries(topicFrequency.value)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 5)
+    .map(([topic]) => topic)
+
+  console.log('Top Topics:', topTopics)
+  
+  // Agrupar libros por tema
   const groupedByTopic = {}
   
-  uniqueBooks.forEach(book => {
-    // Extraer el tema/género del libro
-    let topic = 'Sin clasificación'
+  bookStore.readBooks.forEach(book => {
+    const topics = bookTopics.value[book.key] || ['Sin clasificación']
+    console.log('Book topics in grouping:', book.title, topics)
     
-    if (book.subjects && Array.isArray(book.subjects) && book.subjects.length > 0) {
-      topic = book.subjects[0]
-    } else if (book.subject && Array.isArray(book.subject) && book.subject.length > 0) {
-      topic = book.subject[0]
-    } else if (book.subject_facet && Array.isArray(book.subject_facet) && book.subject_facet.length > 0) {
-      topic = book.subject_facet[0]
-    }
-    
-    // Agregar el libro al tema correspondiente
-    if (!groupedByTopic[topic]) {
-      groupedByTopic[topic] = []
-    }
-    groupedByTopic[topic].push(book)
+    // Agregar el libro a cada uno de sus temas que esté en los top 5
+    topics.forEach(topic => {
+      if (topTopics.includes(topic)) {
+        if (!groupedByTopic[topic]) {
+          groupedByTopic[topic] = []
+        }
+        // Solo agregar el libro si no está ya en este tema
+        if (!groupedByTopic[topic].some(b => b.key === book.key)) {
+          groupedByTopic[topic].push(book)
+        }
+      }
+    })
   })
   
+  console.log('Final grouped books:', groupedByTopic)
   return groupedByTopic
 })
 
 // Verificar si hay libros
-const hasBooks = computed(() => 
-  Object.keys(booksByTopic.value).length > 0
-)
+const hasBooks = computed(() => {
+  const hasTopics = Object.keys(booksByTopic.value).length > 0
+  console.log('hasBooks computed:', hasTopics, 'readBooks length:', bookStore.readBooks.length)
+  return hasTopics
+})
 
 // Verificar si un libro está en una lista específica
 function isInList(listName, bookKey) {
@@ -113,6 +194,9 @@ function isInList(listName, bookKey) {
 function openBookModal(book) {
   bookStore.openBookModal(book)
 }
+
+// Cargar detalles cuando se monta el componente
+onMounted(loadBookDetails)
 </script>
 
 <style scoped>
@@ -219,6 +303,7 @@ function openBookModal(book) {
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -262,5 +347,16 @@ function openBookModal(book) {
 
 .list-tag.want {
   background: #a95;
+}
+
+.loading-state {
+  text-align: center;
+  margin: 3em 0;
+  color: #666;
+  font-style: italic;
+  background: white;
+  padding: 2em;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 </style>

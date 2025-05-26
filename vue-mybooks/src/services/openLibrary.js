@@ -16,14 +16,24 @@ export async function buscarLibros(query, filter = 'all') {
 
 // Nueva función para buscar libros por tema/género
 export async function buscarLibrosPorTema(tema, excludeKey = null, limit = 3) {
-  const url = `https://openlibrary.org/search.json?subject=${encodeURIComponent(tema)}&limit=${limit + 2}`;
+  const url = `https://openlibrary.org/subjects/${encodeURIComponent(tema)}.json`;
+  console.log('URL:', url);
   
   const res = await fetch(url);
   const data = await res.json();
+
+  console.log('Data:', data);
   
   // Filtrar resultados para excluir el libro original
-  let resultados = data.docs.filter(book => book.key !== excludeKey);
+  let resultados = data.works.filter(book => book.key !== excludeKey);
   
   // Limitar a la cantidad solicitada
   return resultados.slice(0, limit);
+}
+
+export async function buscarDetalleDeLibro(key) {
+  const url = `https://openlibrary.org${key}.json`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data;
 }
