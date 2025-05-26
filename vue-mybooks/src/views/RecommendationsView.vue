@@ -112,27 +112,40 @@ onMounted(cargarRecomendaciones);
 
 <style scoped>
 .recommendations-view {
-  max-width: 900px;
-  margin: 2em auto;
-  padding: 1em;
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 2rem 1rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+.recommendations-view > h2 {
+  font-size: 2.2rem;
+  color: #5c4033;
+  margin-bottom: 2.5rem;
+  text-align: center;
 }
 
 .loading, .error, .empty {
-  background: #fff;
-  padding: 2em;
-  border-radius: 12px;
   text-align: center;
-  margin: 2em 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-size: 1.2rem;
+  margin-top: 3rem;
+  color: #5c4033;
 }
 
 .error {
+  /* mantiene rojo para error */
   color: #a33;
   border: 1px solid #f8cccc;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: #fff;
+  margin-top: 3rem;
 }
 
 .empty {
-  color: #666;
   font-style: italic;
+  color: #5c4033;
+  margin-top: 3rem;
+  padding: 1rem;
 }
 </style>
