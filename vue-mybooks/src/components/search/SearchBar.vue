@@ -3,6 +3,9 @@ import { ref, watch, onUnmounted } from 'vue'
 
 const props = defineProps({
   modelValue: String,
+  
+
+
   filter: {
     type: String,
     default: 'book'
@@ -12,7 +15,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'update:filter', 'search'])
 
 const searchQuery = ref(props.modelValue || '')
-const searchType = ref(props.filter || 'book')
+const searchType = ref(props.filter && props.filter !== '' ? props.filter : 'book')
+
 const isLoading = ref(false)
 let searchTimeout = null
 
@@ -22,7 +26,7 @@ watch(() => props.modelValue, val => {
 })
 
 watch(() => props.filter, val => {
-  if (val !== searchType.value) searchType.value = val
+  searchType.value = val && val !== '' ? val : 'book'
 })
 
 // Emitir cambios externos
