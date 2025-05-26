@@ -2,7 +2,7 @@
   <div class="search-container">
     <SearchBar
       v-model="query"
-      :filter="filter"
+      :filter="book"
       @update:filter="filter = $event"
       @search="ejecutarBusqueda"
     />
