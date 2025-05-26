@@ -19,7 +19,12 @@
         Cargando sugerencias...
       </div>
       <div v-else class="suggested-books">
-        <div v-for="s in suggestions" :key="s.id" class="suggested-book">
+        <div
+          v-for="s in suggestions"
+          :key="s.id"
+          class="suggested-book clickable"
+          @click="$emit('select', s)"
+        >
           <img :src="s.cover" alt="cover" />
           <div class="suggested-title">{{ s.title }}</div>
           <div class="suggested-author">{{ s.author }}</div>
@@ -30,7 +35,7 @@
 </template>
 
 <script setup>
-const props = defineProps({
+defineProps({
   book: {
     type: Object,
     required: true
@@ -40,6 +45,8 @@ const props = defineProps({
     default: () => []
   }
 })
+
+defineEmits(['select'])
 </script>
 
 <style scoped>
@@ -92,6 +99,7 @@ const props = defineProps({
 .suggested-book {
   width: 110px;
   text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 .suggested-book img {
   width: 90px;
@@ -115,4 +123,6 @@ const props = defineProps({
   color: #999;
   padding: 1em 0;
 }
+
+
 </style>

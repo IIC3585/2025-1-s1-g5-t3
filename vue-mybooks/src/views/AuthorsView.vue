@@ -117,7 +117,7 @@ function openBookModal(book) {
 .header-row {
   display: flex;
   align-items: center;
-  margin-bottom: 1.5em;
+  margin-top: 6%;
 }
 
 .header-row h2 {
